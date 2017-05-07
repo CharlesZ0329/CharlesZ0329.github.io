@@ -1,0 +1,530 @@
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- CSS is fully refer from Bootstrap, which is store on my host -->
+    <link rel="stylesheet" type="text/css" href="http://cgi.csc.liv.ac.uk/~x6yz1/bootstrap.min.css">
+    <title>Hunt Submarine [javascript]</title>
+    <!-- code for killer -->
+    <script type="text/javascript">
+        //initial state of game
+        fuel = 10;
+        round = 1;
+        score = 0;
+        scoreKiller = 0;
+        end = false;
+        //use array to keep enemies objects
+        enemies = [];
+        numOfKiller = 0;
+        fuelNum = 0;
+        var result;
+        // get method: get inner HTML
+        function get(id) {
+            return document.getElementById(id).innerHTML;
+        }
+        // set method: set inner HTML
+        function set(id, content) {
+            document.getElementById(id).innerHTML = content;
+        }
+        /*
+            pass the id of cell which be clicked, and change the content by user input
+            1-9 stand for the quantity of fuel
+            u stand for user
+            k stand for killer
+            o stand for obstacle
+         */
+        function changeBackground1(id) {
+            var cell = document.getElementById(id);
+            if (cell.innerHTML === "") {
+                var content = prompt("Please place an object", "'u->user k->killer o-obstacle (1-9)->fuel'");
+                switch (content) {
+                    case "1":
+                    case "2":
+                    case "3":
+                    case "4":
+                    case "5":
+                    case "6":
+                    case "7":
+                    case "8":
+                    case "9":
+                        {
+                            cell.innerHTML = content;
+                            setFuel = true;
+                            fuelNum++;
+                            break;
+                        }
+                    case "o":
+                        {
+
+                            content = "Obstacle";
+                            cell.innerHTML = content;
+                            break;
+                        }
+
+                    case "u":
+                        {
+
+                            if (!setUser) {
+                                //create object of Me class
+                                me = new Me(id);
+                                content = "You";
+                                cell.innerHTML = content;
+                                setUser = true;
+                                break;
+                            } else {
+                                alert("You can only have one user!");
+                                break;
+                            }
+                        }
+                    case "k":
+                        {
+                            //create killer and put it in array
+                            content = "Killer";
+                            var temp = new Enemy(id);
+                            enemies.push(temp);
+                            cell.innerHTML = content;
+                            setKiller = true;
+                            break;
+                        }
+                    default:
+                        {
+                            if (content == null) {
+                                // do nothing if user click cancle
+                            } else {
+                                alert("Invalid input! Read instruction if you have any confussion.");
+                            }
+                            break;
+                        }
+
+                }
+            } else {
+                // if user put an object on a cell which has been set
+                alert("The object on this cell has been set (Cannot change!)");
+            }
+
+
+        }
+        // once user click Confirm button, update the table
+        function setFinished() {
+            confirm = true
+            update();
+            numOfKiller = enemies.length;
+            alert("Game Start! Please move!");
+        }
+        // update the state table
+        function update() {
+            document.getElementById("fuel").innerHTML = fuel;
+            document.getElementById("round").innerHTML = round;
+            document.getElementById('score').innerHTML = score;
+            document.getElementById('scoreKiller').innerHTML = scoreKiller;
+        }
+    </script>
+    <!-- code for user -->
+    <script>
+        /*
+                        w - UP 119
+                        a - LEFT 97
+                        d - RIGHT 100
+                        x - DOWN 120
+                         */
+        function Me(id) {
+            this.currentId = id;
+            // parse the id into row and col
+            this.row = parseInt(id / 10);
+            this.col = id % 10;
+            // move user according to user input
+            // if user want wo move out to the boundary, pop-up window will appear
+            this.move = function(c) {
+                var old = document.getElementById(10 * this.row + this.col);
+                switch (c) {
+                    case 97:
+                        {
+                            //
+                            if (this.col == 0 || get(10 * this.row + this.col - 1) == "Obstacle") {
+                                alert("Can't do it");
+                            } else {
+
+                                this.col--;
+                                fuel--;
+                                old.innerHTML = "";
+                                currentId = 10 * this.row + this.col;
+                                moveSucess(currentId);
+                            }
+                            break;
+                        }
+                    case 100:
+                        {
+                            if (this.col == 9 || get(10 * this.row + this.col + 1) == "Obstacle") {
+                                alert("Can't do it");
+                            } else {
+                                this.col++;
+                                fuel--;
+                                old.innerHTML = "";
+                                currentId = 10 * this.row + this.col;
+                                moveSucess(currentId);
+                            }
+                            break;
+                        }
+                    case 119:
+                        {
+                            if (this.row == 0 || get(10 * (this.row - 1) + this.col) == "Obstacle") {
+                                alert("Can't do it");
+                            } else {
+                                fuel--;
+                                this.row--;
+                                old.innerHTML = "";
+                                currentId = 10 * this.row + this.col;
+                                moveSucess(currentId);
+                            }
+                            break;
+                        }
+                    case 120:
+                        {
+                            if (this.row == 9 || document.getElementById(10 * (this.row + 1) + this.col).innerHTML == "Obstacle") {
+                                alert("Can't do it");
+                            } else {
+                                fuel--;
+                                this.row++;
+                                old.innerHTML = "";
+                                currentId = 10 * this.row + this.col;
+                                moveSucess(currentId);
+                            }
+                            break;
+                        }
+                    default:
+                        {
+                            alert("You should try w(up), a(left), d(right), or x(down) to move your submarine");
+                            break;
+                        }
+                }
+
+            }
+            // move user
+            function moveSucess(id) {
+                if (numOfKiller == 0) {
+                    end = true;
+                    alert("All the killer cannot move, Game turn to over");
+                } else {
+
+                    if (get(id) == "") {
+                        set(id, "You");
+
+                    } else if (parseInt(get(id)) >= 1 && parseInt(get(id)) <= 9) {
+                        fuel += parseInt(get(id));
+                        score += parseInt(get(id));
+                        fuelNum--;
+                        set(id, "You");
+                    }
+                    // go through the array of killer, and move them
+                    for (var i = 0; i < enemies.length; i++) {
+                        enemies[i].move(i);
+                    }
+                }
+
+            }
+        }
+    </script>
+
+    <script type="text/javascript">
+        function Enemy(id) {
+            this.row = parseInt(id / 10);
+            this.col = id % 10;
+            this.surrounded = 0;
+            this.die = false;
+            /*
+            User three for-for loop to ensure each of situation
+             */
+            this.move = function(enemyID) {
+
+                var valid = false;
+                var move = false;
+                var myID = enemyID;
+                /*
+                If there is any fuel or user near the kill
+                The first for-for loop will move the killer
+                and catch it
+                 */
+                for (var i = -1; i <= 1; i++) {
+                    if (valid) {
+                        break;
+                    }
+                    for (var j = -1; j <= 1; j++) {
+                        if (valid) {
+                            break;
+                        }
+                        temp1 = this.row + i;
+                        temp2 = this.col + j;
+                        // if killer want to try the cell which is out of boundary, then skip it.
+                        if (temp1 < 0 || temp2 > 9 || temp1 > 9 || temp2 < 0) {
+                            // count the invalid cell around killer
+                            this.surrounded += 1;
+                        } else if (get(10 * temp1 + temp2) == "Obstacle" || get(10 * temp1 + temp2) == "Killer") {
+                            //if there is any killer or obstacle on the cell, skip it
+                            this.surrounded += 1;
+
+                        } else {
+                            var temp_id = 10 * (i + this.row) + (j + this.col);
+                            var temp_content = get(temp_id);
+                            // catch user and game will end
+                            if (temp_content == "You" && end == false) {
+                                set(10 * this.row + this.col, "");
+                                this.row = temp1;
+                                this.col = temp2;
+                                set(temp_id, "Death");
+                                scoreKiller += 100;
+                                end = true;
+                                valid = true;
+                                move = true;
+                                update();
+                                // catch the fuel and add it to killer's score
+                            } else if (parseInt(temp_content) >= 1 || parseInt(temp_content) <= 9) {
+                                set(10 * this.row + this.col, "");
+                                this.row = temp1;
+                                this.col = temp2;
+                                set(temp_id, "Killer");
+                                scoreKiller += parseInt(temp_content);
+                                fuelNum--;
+                                valid = true;
+                                move = true;
+
+                            }
+                        }
+
+                    }
+                }
+                // if killer was surrounded, then it will die
+                if (this.surrounded == 9 && !this.die) {
+                    numOfKiller--;
+                    this.die = true;
+                } else {
+                    // else it will explore the cell around it
+                    this.surrounded = 0;
+                    if (!valid) {
+                        // it will move according to the position of user's boat
+                        for (var x = -1; x <= 1; x++) {
+                            temp3 = this.row + x;
+                            if (move) {
+                                break;
+                            }
+                            for (var y = -1; y <= 1; y++) {
+                                temp4 = this.col + y;
+                                if (move) {
+                                    break;
+                                }
+                                if (temp3 < 0 || temp4 > 9 || temp3 > 9 || temp4 < 0) {
+
+                                } else if (get(10 * temp3 + temp4) == "Obstacle" || get(10 * temp3 + temp4) == "Killer") {
+
+                                } else {
+                                    // if user is upside killer
+                                    if (me.row < this.row && x < 0) {
+                                        //if user is at up-left position
+                                        if (me.col < this.col && y < 0) {
+                                            set(10 * this.row + this.col, "");
+                                            this.row = temp3;
+                                            this.col = temp4;
+                                            set(temp3 * 10 + temp4, "Killer");
+                                            move = true;
+                                            //if user is at up position
+                                        } else if (me.col == this.col && y == 0) {
+                                            set(10 * this.row + this.col, "");
+                                            this.row = temp3;
+                                            this.col = temp4;
+                                            set(temp3 * 10 + temp4, "Killer");
+                                            move = true;
+                                            //if user is at up-right position
+                                        } else if (me.col > this.col && y > 0) {
+                                            set(10 * this.row + this.col, "");
+                                            this.row = temp3;
+                                            this.col = temp4;
+                                            set(temp3 * 10 + temp4, "Killer");
+                                            move = true;
+                                        }
+                                        // if user is in the same line
+                                    } else if (me.row == this.row && x == 0) {
+                                        // if user is at right
+                                        if (me.col > this.col && y > 0) {
+                                            set(10 * this.row + this.col, "");
+                                            this.row = temp3;
+                                            this.col = temp4;
+                                            set(temp3 * 10 + temp4, "Killer");
+                                            move = true;
+                                            // if user is at left
+                                        } else if (me.col < this.col && y < 0) {
+                                            set(10 * this.row + this.col, "");
+                                            this.row = temp3;
+                                            this.col = temp4;
+                                            set(temp3 * 10 + temp4, "Killer");
+                                            move = true;
+
+                                        }
+                                        // if user is at down side
+                                    } else if (me.row > this.row && x > 0) {
+                                        // if user is at bottom-left
+                                        if (me.col < this.col && y < 0) {
+                                            set(10 * this.row + this.col, "");
+                                            this.row = temp3;
+                                            this.col = temp4;
+                                            set(temp3 * 10 + temp4, "Killer");
+                                            move = true;
+                                            // if user is at bottom
+                                        } else if (me.col == this.col && y == 0) {
+                                            set(10 * this.row + this.col, "");
+                                            this.row = temp3;
+                                            this.col = temp4;
+                                            set(temp3 * 10 + temp4, "Killer");
+                                            move = true;
+                                            // if user is at bottom right
+                                        } else if (me.col > this.col && y > 0) {
+                                            set(10 * this.row + this.col, "");
+                                            this.row = temp3;
+                                            this.col = temp4;
+                                            set(temp3 * 10 + temp4, "Killer");
+                                            move = true;
+
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (!move) {
+                        // if user doesn't move, decide a arbitary direction to move
+                        for (var x = -1; x <= 1; x++) {
+                            for (var y = -1; y <= 1; y++) {
+                                temp5 = this.row + x;
+                                temp6 = this.col + y;
+                                if (temp5 < 0 || temp6 > 9 || temp5 > 9 || temp6 < 0) {
+
+                                } else if (get(10 * temp5 + temp6) == "Obstacle" || get(10 * temp5 + temp6) == "Killer") {
+
+                                } else {
+                                    set(10 * this.row + this.col, "");
+                                    this.row = temp5;
+                                    this.col = temp6;
+                                    set(temp5 * 10 + temp6, "Killer");
+                                    move = true;
+                                    break;
+                                }
+
+                                if (move) {
+                                    break;
+                                }
+                            }
+                            if (move) {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <script>
+        setUser = false;
+        setKiller = false;
+        setFuel = false;
+        confirm = false;
+        document.writeln('<div class="container">');
+        document.writeln('<div class="row"><div class="col-md-12"><p><br><br></p></div></div>');
+        document.writeln('<div class="row">');
+        document.writeln('<div class="col-md-6">');
+        document.writeln('<table border="3" width="500px" height="500px"><tbody>');
+
+        for (var r = 0; r < 10; r++) {
+            document.writeln("<tr>");
+            for (var c = 0; c < 10; c++) {
+                document.writeln('<td valign="center" align="center" id="' + (10 * r + c) + '" width="50px" height="50px" onclick="if (!confirm){changeBackground1(' + (10 * r + c) + ')}else{alert(\'Game has start\')};"></td>')
+            }
+            document.writeln("</tr>");
+        }
+        document.writeln("</tbody></table>");
+        document.writeln('</div>');
+        document.writeln('<div class="col-md-6">');
+        document.writeln('<h2>Welcome to submarine game!</h2>');
+        document.writeln('<h4>\'Before you start, read the game mannul here...\'</h4>');
+        document.writeln('<p><br>1, At very beginning, you should setup your game by clicking on cells. \'u\' is stand for user (your submarine), \'k\' is stand for killer, number \'1\'  to \'9\' is stand for fuel on the cell. You should setup one cell as your initial position (by type \'u\' on it), one cell as killer and one cell hold fuel at least. If you haven\'t set user and killer, then you cannot start game. If you do not set any fuel on cell, game will end automatically!<br><br>2, Once you have set up your game, please click \'Setup\' button to start. If you wanna end up game once you start, click \'End\' button please<br><br>3,You can move your boat by type w, a, d, and x, which are stand for Up(w) Left(a) Right(d) Down(x)<br><br>4, The final score will be shown as a pop-up window (After you see \'Death\', once you type any key, you will see the result of game)<br><br></p> <table border=\"2\" class=\"text-center\"><tbody><tr><th>Round</th><th>Fuel</th><th>Score(User)</th><th>Score(Killer)</th></tr><tr><td id=\"round\">0</td><td id=\"fuel\">0</td><td id=\"score\">0</td><td id=\"scoreKiller\">0</td></tr></tbody></table>');
+        document.writeln('</div>');
+        document.writeln('</div>');
+        document.addEventListener("keypress", function() {
+            if (!end) {
+                if (confirm) {
+                    if (setFuel) {
+                        if (fuel > 0) {
+                            if (fuelNum > 0) {
+                                if (numOfKiller > 0) {
+                                    round++;
+                                    var c = event.which;
+                                    me.move(c);
+                                    update();
+                                } else {
+                                    if (score > scoreKiller) {
+                                        result = "You get more score than killer, you win!!!";
+                                    } else if (score == scoreKiller) {
+                                        result = "Opps, you have the same score as killer, no win or lose!!!";
+                                    } else {
+                                        result = "Your score is less than killer, you lose!"
+                                    }
+                                    alert("Game Over! All the killer has been stuck\n" + result);
+                                }
+                            } else {
+                                if (score > scoreKiller) {
+                                    result = "You get more score than killer, you win!!!";
+                                } else if (score == scoreKiller) {
+                                    result = "Opps, you have the same score as killer, no win or lose!!!";
+                                } else {
+                                    result = "Your score is less than killer, you lose!"
+                                }
+                                alert("Game Over! All the fuel has been collected! Congrats!\n" + result);
+                            }
+                        } else {
+                            if (score > scoreKiller) {
+                                result = "You get more score than killer, you win!!!";
+                            } else if (score == scoreKiller) {
+                                result = "Opps, you have the same score as killer, no win or lose!!!";
+                            } else {
+                                result = "Your score is less than killer, you lose!"
+                            }
+                            alert("Game over! (You have run out of your fuel)\n" + result);
+                        }
+                    } else {
+                        alert("You haven't set any fuel! Game turn to over automatically.");
+                        end = true;
+                    }
+
+                } else {
+                    alert("Please set up your game first(After setting, press 'confirm' button)");
+                }
+            } else {
+                if (score > scoreKiller) {
+                    result = "You get more score than killer, you win!!!";
+                } else if (score == scoreKiller) {
+                    result = "Opps, you have the same score as killer, no win or lose!!!";
+                } else {
+                    result = "Your score is less than killer, you lose!"
+                }
+                alert("Game Over! (Press button 'Reset' to start another round)\n" + result);
+            }
+        });
+    </script>
+    <div class="row">
+        <form name="form1" action="">
+            <div class="col-md-2" style="padding-left: 15px">
+                <input type="button" value="Setup(Confirm)" onclick="if(setUser){ if(setKiller){setFinished()}else{alert('You haven\'t set any killer yet')}}else{alert('You haven\'t set any user yet!')}" />
+            </div>
+            <div class="col-md-2">
+                <input type="button" value="End(Shut down)" onclick="end = true;" />
+            </div>
+            <div class="col-md-2">
+                <input type="button" value="Reset(Clean)" onclick="window.location.reload();" />
+            </div>
+        </form>
+    </div>
+
+</body>
+
+</html>
